@@ -118,10 +118,12 @@ def get_token_header():
 
     # If the above failed, perform new auth process
     url = "https://simbachain-dev.auth0.com/oauth/token"
+    audience = os.getenv('SIMBA_UPLOAD_HOST', "https://etl-upload.dev.simbachain.com/")
+
     payload = {
         "client_id": client_id,
         "client_secret": client_secret,
-        "audience": "https://etl-upload.dev.simbachain.com/",
+        "audience": audience,
         "grant_type": "client_credentials"
     }
 
@@ -147,11 +149,14 @@ def whoami():
     """
 
     # HOST can be overridden with an environment variable, otherwise use the default
-    url = os.getenv('SIMBA_UPLOAD_HOST', "https://etl-upload.dev.simbachain.com/whoami")
+    url = os.getenv('SIMBA_UPLOAD_HOST', "https://etl-upload.dev.simbachain.com/")
 
     # Perform auth process, return headers for future request calls
     headers = get_token_header()
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(
+        '{}whoami'.format(url),
+        headers=headers
+    )
 
     if resp.status_code != 200:
         log.error(resp.text)
@@ -171,7 +176,9 @@ def post_file(filepath, name, mime_type='text/csv', project_uid='boeing'):
     :return:
     :raises: Exception if POST returns an error status code
     """
-    url = "https://etl-upload.dev.simbachain.com"
+
+    # HOST can be overridden with an environment variable, otherwise use the default
+    url = os.getenv('SIMBA_UPLOAD_HOST', "https://etl-upload.dev.simbachain.com/")
 
     # The project to upload the data to
     data = {'project_uid': project_uid}
@@ -181,7 +188,7 @@ def post_file(filepath, name, mime_type='text/csv', project_uid='boeing'):
         'file': (name, open(os.path.join(filepath), 'rb'), mime_type, {})
     }
     resp = requests.post(
-        '{}/file'.format(url),
+        '{}file'.format(url),
         params=data,
         files=files,
         headers=headers
