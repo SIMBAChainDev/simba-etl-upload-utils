@@ -165,14 +165,15 @@ def whoami():
     resp.raise_for_status()
 
 
-def post_file(filepath, name, mime_type='text/csv', project_uid='boeing'):
+def post_file(filepath, name, mime_type: str = 'text/csv', project_uid: str = 'boeing', tag: str = 'example.tag.0001'):
     """
     Upload a file to the SIMBA ETL server
 
-    :param filepath: The path to the file to uplaod
+    :param filepath: The path to the file to upload
     :param name: The name the file will be saved as
     :param mime_type: The type of file, default to 'text/csv'
     :param project_uid: The project to upload the file to. "boeing" is the default.
+    :param tag: A string to tag the file with. Stored as metadata alongside the uploaded file.
     :return:
     :raises: Exception if POST returns an error status code
     """
@@ -181,7 +182,10 @@ def post_file(filepath, name, mime_type='text/csv', project_uid='boeing'):
     url = os.getenv('SIMBA_UPLOAD_HOST', "https://etl-upload.dev.simbachain.com/")
 
     # The project to upload the data to
-    data = {'project_uid': project_uid}
+    data = {
+        'project_uid': project_uid,
+        'tag': tag
+    }
     headers = get_token_header()
 
     files = {
