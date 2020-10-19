@@ -199,6 +199,8 @@ def post_file(filepath, name, mime_type: str = 'text/csv', project_uid: str = 'b
     )
     if resp.status_code != 200:
         log.error(resp.text)
+    else:
+        log.info(resp.json())
     resp.raise_for_status()
 
 
@@ -209,4 +211,10 @@ if __name__ == '__main__':
     whoami()
 
     # Posts an example file. Takes a file path and a name for that file to be stored as
-    post_file('./data/company_dat.csv', 'company_dat.csv')
+    post_file(
+        './data/company_dat.csv',
+        'company_dat.csv',
+        mime_type='text/csv',
+        project_uid='boeing',
+        tag='company_data'
+    )
