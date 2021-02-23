@@ -140,6 +140,67 @@ def get_token_header():
         }
 
 
+def get_azure_client_credential_flow(client_id=None, secret=None, creds_scope=None, creds_tenant=None) -> dict:
+    """
+    Get access token for machine to machine flow
+    Usage:
+    ```
+        requests.get("http://localhost:8000/admin/users/", headers=get_client_credential_flow())
+    })
+    ```
+    :param id:
+    :param secret:
+    :param creds_scope:
+    :param creds_tenant:
+    :return: dict containing auth headers
+    """
+
+    if not client_id:
+        client_id = os.environ['AZURE_AUTH_APP_CLIENT_ID']
+    if not secret:
+        secret = os.environ['AZURE_AUTH_APP_CLIENT_SECRET']
+    if not creds_scope:
+        creds_scope = os.environ['AZURE_APP_ID']
+    if not creds_tenant:
+        creds_tenant = os.environ['AZURE_TENANT']
+
+    try:
+        # Try to use a saved token to avoid unnecessary auth processes
+        token = get_saved_token(client_id)
+        return {
+            'Authorization': 'Bearer {}'.format(token['access_token'])
+        }
+    except Exception as e1:
+        log.info(e1)
+
+    payload = {
+        'grant_type': 'client_credentials',
+        'client_id': client_id,
+        'client_secret': secret,
+        'scope': '{}/.default'.format(creds_scope)
+    }
+
+    resp = requests.post(
+        "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token".format(tenant=creds_tenant),
+        data=payload,
+        allow_redirects=True
+    )
+
+    if resp.status_code != 200:
+        raise Exception(resp.text)
+    else:
+        res = resp.json()
+        log.debug("Token Type   :\t{}".format(res['token_type']))
+        log.debug("Expires in   :\t{}".format(res['expires_in']))
+        log.debug("Access Token :\t{}".format(res['access_token']))
+        access_token = res['access_token']
+        # Save the token for reuse
+        save_token(client_id, res)
+        return {
+            'Authorization': 'Bearer {}'.format(access_token)
+        }
+
+
 def whoami():
     """
     Performs auth and logs a dict of user data
@@ -210,11 +271,11 @@ if __name__ == '__main__':
     # Performs auth and logs a dict of user data
     whoami()
 
-    # Posts an example file. Takes a file path and a name for that file to be stored as
-    post_file(
-        './data/company_dat.csv',
-        'company_dat.csv',
-        mime_type='text/csv',
-        project_uid='boeing',
-        tag='company_data'
-    )
+    # # Posts an example file. Takes a file path and a name for that file to be stored as
+    # post_file(
+    #     './data/company_dat.csv',
+    #     'company_dat.csv',
+    #     mime_type='text/csv',
+    #     project_uid='boeing',
+    #     tag='company_data'
+    # )
